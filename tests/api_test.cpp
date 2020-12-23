@@ -5,7 +5,7 @@
 #define NX 3
 //#define NX 50
 #define DX 1
-#define _NMODES NX
+#define _NMODES 2 //NX
 //#define _NMODES 200
 #define _NWAVES 6//3
 //#define _NWAVES 50
@@ -23,6 +23,7 @@ void test()
 
   double t=0;
 
+  rm_d.update_time(1);
   rm_d.generate_velocity_field(u,v,w,DX,t);
 
   std::cout << "u:" << std::endl;
@@ -63,13 +64,17 @@ void test()
 
   std::cout << "u[0][0][0]: " << u[0][0][0] << std::endl;
   std::cout << "u[NX-1][0][0]: " << u[NX-1][0][0] << std::endl;
+
 }
 
 int main()
 {
+  SynthTurb::degeneracy_generator(900);
   std::cout << std::endl << "PERIODIC TEST" << std::endl << std::endl;
   test<SynthTurb::SynthTurb3d_periodic_box>();
 
+/*
   std::cout << std::endl << "ALL WAVES TEST" << std::endl << std::endl;
   test<SynthTurb::SynthTurb3d_all_waves>();
+  */
 }

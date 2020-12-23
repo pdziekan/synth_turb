@@ -17,7 +17,7 @@ namespace SynthTurb
         this->k[n] = this->k[0] * pow(alpha, n);
     }
 
-    void generate_unit_wavevectors(const int &m) override
+    void generate_unit_wavevectors(const int &n, const int &m) override
     {
       // generate random unit vector
       real_t h  = this->h_d(this->rand_eng);
