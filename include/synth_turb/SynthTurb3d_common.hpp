@@ -230,7 +230,7 @@ namespace SynthTurb
     };
     */
 
-    void calculate_velocity(real_t &u, real_t &v, real_t &w, const real_t x[3], const real_t &t)
+    void calculate_velocity(real_t &u, real_t &v, real_t &w, const real_t x[3])
     {
       {
         u = 0;
@@ -253,7 +253,7 @@ namespace SynthTurb
     };
 
     template<int nx>
-    void generate_velocity_field(real_t u[nx][nx][nx], real_t v[nx][nx][nx], real_t w[nx][nx][nx], const real_t &dx, const real_t &t)
+    void generate_velocity_field(real_t u[nx][nx][nx], real_t v[nx][nx][nx], real_t w[nx][nx][nx], const real_t &dx)
     {
       #pragma omp parallel for
       for(int i=0; i<nx; ++i)
@@ -261,7 +261,7 @@ namespace SynthTurb
           for(int k=0; k<nx; ++k)
           {
             const real_t x[3] = {i*dx, j*dx, k*dx};
-            calculate_velocity(u[i][j][k], v[i][j][k], w[i][j][k], x, t);
+            calculate_velocity(u[i][j][k], v[i][j][k], w[i][j][k], x);
           }
     };
   };

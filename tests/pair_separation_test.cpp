@@ -127,13 +127,17 @@ class tester_synth_turb : public tester_common
    for(int d=0; d<2; ++d)
    {
      // predictor
-     rm_d.calculate_velocity(v[p][d][0][0], v[p][d][0][1], v[p][d][0][2], x[p][d][0], t);
+     if(t==0) rm_d.calculate_velocity(v[p][d][0][0], v[p][d][0][1], v[p][d][0][2], x[p][d][0]);
      for(int i=0; i<3; ++i)
      {
        x[p][d][1][i] = x[p][d][0][i] + v[p][d][0][i] * DT; 
      }
+   }
+   rm_d.update_time(DT);
+   for(int d=0; d<2; ++d)
+   {
      // corrector
-     rm_d.calculate_velocity(v[p][d][1][0], v[p][d][1][1], v[p][d][1][2], x[p][d][1], t+DT);
+     rm_d.calculate_velocity(v[p][d][1][0], v[p][d][1][1], v[p][d][1][2], x[p][d][1]);
      for(int i=0; i<3; ++i)
      {
        x[p][d][0][i] += 0.5 * (v[p][d][0][i] + v[p][d][1][i]) * DT; 
@@ -203,35 +207,35 @@ int main()
   // synth turb with periodic box flow
   {
     constexpr int NModes=1000,
-                  NWaves=6;
+                  NWaves=50;
     std::cout << "Starting periodic_box separation test, NModes: " << NModes << " NWaves: " << NWaves << std::endl;
     auto t1 = std::chrono::high_resolution_clock::now();
-    tester_synth_turb<SynthTurb::SynthTurb3d_periodic_box, NModes, NWaves> periodic_box("pair_separation_periodic_box.dat");
+    tester_synth_turb<SynthTurb::SynthTurb3d_periodic_box, NModes, NWaves> periodic_box("pair_separation_new_periodic_box.dat");
     periodic_box.test();
     auto t2 = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
     std::cout << "periodic_box wall time: " << duration << " [ms] OpenMP threads: " << omp_get_max_threads() <<  std::endl;
   }
   // synth turb with all waves
-  {
-    constexpr int NModes=200,
-                  NWaves=50;
-    std::cout << "Starting all_waves separation test, NModes: " << NModes << " NWaves: " << NWaves << std::endl;
-    auto t1 = std::chrono::high_resolution_clock::now();
-    tester_synth_turb<SynthTurb::SynthTurb3d_all_waves, NModes, NWaves> all_waves("pair_separation_all_waves.dat");
-    all_waves.test();
-    auto t2 = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
-    std::cout << "all_waves wall time: " << duration << " [ms] OpenMP threads: " << omp_get_max_threads() <<  std::endl;
-  }
+//  {
+//    constexpr int NModes=200,
+//                  NWaves=50;
+//    std::cout << "Starting all_waves separation test, NModes: " << NModes << " NWaves: " << NWaves << std::endl;
+//    auto t1 = std::chrono::high_resolution_clock::now();
+//    tester_synth_turb<SynthTurb::SynthTurb3d_all_waves, NModes, NWaves> all_waves("pair_separation_all_waves.dat");
+//    all_waves.test();
+//    auto t2 = std::chrono::high_resolution_clock::now();
+//    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
+//    std::cout << "all_waves wall time: " << duration << " [ms] OpenMP threads: " << omp_get_max_threads() <<  std::endl;
+//  }
   // GA17 SGS model
-  {
-    std::cout << "Starting GA17 separation test" << std::endl;
-    auto t1 = std::chrono::high_resolution_clock::now();
-    tester_rand_turb<RandTurb::RandTurb_GA17> GA17("pair_separation_GA17.dat");
-    GA17.test();
-    auto t2 = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
-    std::cout << "GA17 wall time: " << duration << " [ms] OpenMP threads: " << omp_get_max_threads() <<  std::endl;
-  }
+//  {
+//    std::cout << "Starting GA17 separation test" << std::endl;
+//    auto t1 = std::chrono::high_resolution_clock::now();
+//    tester_rand_turb<RandTurb::RandTurb_GA17> GA17("pair_separation_GA17.dat");
+//    GA17.test();
+//    auto t2 = std::chrono::high_resolution_clock::now();
+//    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
+//    std::cout << "GA17 wall time: " << duration << " [ms] OpenMP threads: " << omp_get_max_threads() <<  std::endl;
+//  }
 }
