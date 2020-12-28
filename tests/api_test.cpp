@@ -2,12 +2,12 @@
 #include <synth_turb/SynthTurb3d_all_waves.hpp>
 #include <iostream>
 
-#define NX 3
+#define NX 4
 //#define NX 50
 #define DX 1
-#define _NMODES 2 //NX
+#define _NMODES 200 //NX
 //#define _NMODES 200
-#define _NWAVES 6//3
+#define _NWAVES 50//3
 //#define _NWAVES 50
 
 template<template<class, int, int> class SynthTurb_t>
@@ -69,7 +69,6 @@ void test()
 
 int main()
 {
-  SynthTurb::degeneracy_generator(900);
   std::cout << std::endl << "PERIODIC TEST" << std::endl << std::endl;
   test<SynthTurb::SynthTurb3d_periodic_box>();
 

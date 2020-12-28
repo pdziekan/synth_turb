@@ -7,12 +7,35 @@
 
 #include <random>
 #include <cmath>
+#include <array>
 
 #include <iostream>
 
 namespace SynthTurb
 {
-  template<class real_t, int Nmodes, int Nwaves> // Nmodes - number of Fourier modes, Nwaves - number of wave vectors in each mode
+  // TODO: (don't) take into accont opposite vectors...
+  int degeneracy_generator(const int &n, std::vector<std::array<int,3>> &vectors)
+  {
+    int degeneracy = 0;
+    vectors.clear();
+    const double max = sqrt(n);
+    for(int nx=-max; nx<=max; ++nx)
+      for(int ny=-max; ny<=max; ++ny)
+        for(int nz=-max; nz<=max; ++nz)
+        {
+          if(nx*nx + ny*ny + nz*nz == n)
+          {
+ //           std::cout << "(" << nx << "," << ny << "," << nz << ")" << std::endl;
+            ++degeneracy;
+            vectors.push_back({nx,ny,nz});
+          }
+        }
+ //   std::cout << "degeneracy: " << degeneracy << std::endl;
+    return degeneracy;
+  }
+
+
+  template<class real_t, int Nmodes, int Nwaves_max> // Nmodes - number of Fourier modes, Nwaves_max - number of wave vectors in each mode (maximum, could be less in periodic domain)
   class SynthTurb3d_common
   {
 
@@ -26,15 +49,16 @@ namespace SynthTurb
            std_dev[Nmodes], // sqrt(variances)
            wn[Nmodes];   // frequencies 
 
+    int Nwaves[Nmodes]; // actual number of wave vectors in thath mode
+
     const real_t lambda = 1; // unsteadiness parameter, within [0,1]; see Sidin et al. 2009
 
-    real_t Anm[3][Nmodes][Nwaves],
-           Bnm[3][Nmodes][Nwaves],
-           knm[3][Nmodes][Nwaves];
+    real_t Anm[3][Nmodes][Nwaves_max],
+           Bnm[3][Nmodes][Nwaves_max],
+           knm[3][Nmodes][Nwaves_max];
 
-    std::default_random_engine rand_eng;
-    std::uniform_real_distribution<real_t> h_d, th_d; // random numbers used in generating e[3]
-    std::normal_distribution<real_t> normal_dist;
+ //   std::default_random_engine rand_eng;
+//    std::uniform_real_distribution<real_t> h_d, th_d; // random numbers used in generating e[3]
 
     real_t k[Nmodes];   // norms of wave vectors
     real_t e[3]; // random unit vector
@@ -65,7 +89,7 @@ namespace SynthTurb
       // Variances
       for(int n=0; n<Nmodes; ++n)
       {
-        var[n] = E[n] * dk[n] / Nwaves;
+        var[n] = E[n] * dk[n] / Nwaves[n];
         std_dev[n] = sqrt(var[n]);
       }
 
@@ -89,11 +113,11 @@ namespace SynthTurb
     public:
  
     // ctor
-    SynthTurb3d_common():
-      rand_eng(std::random_device()()),
-      h_d(-1, std::nextafter(1, std::numeric_limits<real_t>::max())), // uniform in [-1,1]
-      th_d(0, std::nextafter(2 * M_PI, std::numeric_limits<real_t>::max())),  // uniform in [0,2*Pi]
-      normal_dist(0,1)
+    SynthTurb3d_common()
+      //rand_eng(std::random_device()()),
+      //h_d(-1, std::nextafter(1, std::numeric_limits<real_t>::max())), // uniform in [-1,1]
+      //th_d(0, std::nextafter(2 * M_PI, std::numeric_limits<real_t>::max())),  // uniform in [0,2*Pi]
+      //normal_dist(0,1)
       {}
 
     // fills the kn, An and Bn arrays
@@ -103,7 +127,7 @@ namespace SynthTurb
       {
         std::normal_distribution<real_t> G_d(0, std_dev[n]);
 
-        for(int m=0; m<Nwaves; ++m)
+        for(int m=0; m<Nwaves[n]; ++m)
         {
           this->generate_unit_wavevectors(n, m);
 
@@ -170,7 +194,7 @@ namespace SynthTurb
 //            {
 //              const real_t wnt = wn[n] * t;
 //              //// std::cerr << i << " " << j << " " << k << " wnt: " << wnt << std::endl;
-//              for(int m=0; m<Nwaves; ++m)
+//              for(int m=0; m<Nwaves_max; ++m)
 //              {
 //                const real_t xu = (knm[0][n][m] * i * dx + knm[1][n][m] * (j+0.5) * dx + knm[2][n][m] * (k+0.5) * dx) + wnt;
 //                u[i][j][k] += Anm[0][n][m]*cos(xu) + Bnm[0][n][m]*sin(xu); 
@@ -196,7 +220,7 @@ namespace SynthTurb
       for(int n=0; n<Nmodes; ++n)
       {
         const real_t wnt = wn[n] * t;
-        for(int m=0; m<Nwaves; ++m)
+        for(int m=0; m<Nwaves_max; ++m)
         {
           const real_t r = (knm[0][n][m] * x[0] + knm[1][n][m] * x[1] + knm[2][n][m] * x[2]) + wnt;
           u += Anm[dim][n][m]*cos(r) + Bnm[dim][n][m]*sin(r); 
@@ -216,7 +240,7 @@ namespace SynthTurb
         for(int n=0; n<Nmodes; ++n)
         {
           //// std::cerr << i << " " << j << " " << k << " wnt: " << wnt << std::endl;
-          for(int m=0; m<Nwaves; ++m)
+          for(int m=0; m<Nwaves[n]; ++m)
           {
             const real_t r = (knm[0][n][m] * x[0] + knm[1][n][m] * x[1] + knm[2][n][m] * x[2]);
 
@@ -241,21 +265,4 @@ namespace SynthTurb
           }
     };
   };
-
-  void degeneracy_generator(const int &n)
-  {
-    int degeneracy = 0;
-    const double max = sqrt(n);
-    for(int nx=-max; nx<=max; ++nx)
-      for(int ny=-max; ny<=max; ++ny)
-        for(int nz=-max; nz<=max; ++nz)
-        {
-          if(nx*nx + ny*ny + nz*nz == n)
-          {
-            std::cout << "(" << nx << "," << ny << "," << nz << ")" << std::endl;
-            ++degeneracy;
-          }
-        }
-    std::cout << "degeneracy: " << degeneracy << std::endl;
-  }
 };

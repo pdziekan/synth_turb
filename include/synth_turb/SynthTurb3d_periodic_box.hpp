@@ -1,53 +1,48 @@
+#include <algorithm>
 #include "SynthTurb3d_common.hpp"
 
 namespace SynthTurb
 {
-  template<class real_t, int Nmodes, int Nwaves>
-  class SynthTurb3d_periodic_box : public SynthTurb3d_common<real_t, Nmodes, Nwaves>
+  template<class real_t, int Nmodes, int Nwaves_max>
+  class SynthTurb3d_periodic_box : public SynthTurb3d_common<real_t, Nmodes, Nwaves_max>
   {
-    using parent_t = SynthTurb3d_common<real_t, Nmodes, Nwaves>;
+    using parent_t = SynthTurb3d_common<real_t, Nmodes, Nwaves_max>;
+
+    int enm[3][Nmodes][Nwaves_max];
 
     void generate_wavenumbers(const real_t &Lmax, const real_t &Lmin) override
     {
-    //  if(Nmodes!=2) throw std::runtime_error("Nmodes needs to be 2 for periodic flow");
+      std::vector<std::array<int,3>> vectors;
+      for(int n=0; n<Nmodes; ++n)
+      {
+        this->Nwaves[n] = degeneracy_generator(n+1, vectors);
+        std::cerr << "vectors size: " << vectors.size() << std::endl;
 
-      // wavenumbers in the form k = n * 2 PI / L, where n=1,2,3,...,Nmodes to get periodic flow 
-//      for(int n=0; n<Nmodes; ++n)
-  //      this->k[n] = (n+1) * (2. * M_PI / Lmax);
-      this->k[0] = (1) * (2. * M_PI / Lmax);
-      this->k[1] = sqrt(2) * (2. * M_PI / Lmax);
+        if(this->Nwaves[n] > Nwaves_max) // random shuffle, because not all possible degeneracies will be used
+        {
+          std::default_random_engine local_rand_eng(std::random_device{}());
+          std::shuffle(std::begin(vectors), std::end(vectors), local_rand_eng);
+          this->Nwaves[n] = Nwaves_max;
+        }
+
+        for(int m=0; m<this->Nwaves[n]; ++m)
+        {
+          enm[0][n][m] = vectors.at(m)[0];
+          enm[1][n][m] = vectors.at(m)[1];
+          enm[2][n][m] = vectors.at(m)[2];
+        }
+      }
+
+      // wavevectors in the form k = (nx,ny,nz) * 2 PI / L, where n is integer to get periodic flow 
+      for(int n=0; n<Nmodes; ++n)
+        this->k[n] = sqrt(n+1) * (2. * M_PI / Lmax);
     }
 
     void generate_unit_wavevectors(const int &mode_idx, const int &wave_idx) override
     {
-      // generate unit vector 
-      if(Nwaves!=6) throw std::runtime_error("Nwaves needs to be 6 for periodic flow");
-      if(mode_idx == 0)
-      {
-        this->e[0]=0;
-        this->e[1]=0;
-        this->e[2]=0;
-        this->e[wave_idx%3]= 1 * (int(wave_idx/3) == 0 ? 1 : -1);
-      }
-      else if (mode_idx == 1) // not all wavevectors for n=2, 6 out of possible 12
-      {
-        if(wave_idx < 3) 
-        {
-          this->e[0]=1. / sqrt(2);
-          this->e[1]=1. / sqrt(2);
-          this->e[2]=1. / sqrt(2);
-          this->e[wave_idx%3]= 0;
-        }
-        else
-        {
-          this->e[0]=-1. / sqrt(2);
-          this->e[1]=-1. / sqrt(2);
-          this->e[2]=-1. / sqrt(2);
-          this->e[wave_idx%3]= 0;
-        }
-      }
-      else
-        throw std::runtime_error("mode_idx > 1");
+      this->e[0]=enm[0][mode_idx][wave_idx] / sqrt(mode_idx+1);
+      this->e[1]=enm[1][mode_idx][wave_idx] / sqrt(mode_idx+1);
+      this->e[2]=enm[2][mode_idx][wave_idx] / sqrt(mode_idx+1);
 
       std::cerr << "mode_idx: " << mode_idx << " wave_idx: " << wave_idx << " e[0]: " << this->e[0] << " e[1]: " << this->e[1] << " e[2]: " << this->e[2] << std::endl;
     }
@@ -64,7 +59,7 @@ namespace SynthTurb
         std::default_random_engine local_rand_eng(std::random_device{}());
         real_t relax = exp(-this->wn[n] * dt);
 
-        for(int m=0; m<Nwaves; ++m)
+        for(int m=0; m<this->Nwaves[n]; ++m)
         {
           for(int i=0; i<3; ++i)
           {
