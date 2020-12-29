@@ -207,7 +207,7 @@ int main()
   // synth turb with periodic box flow
   {
     constexpr int NModes=1000,
-                  NWaves=50;
+                  NWaves=6;
     std::cout << "Starting periodic_box separation test, NModes: " << NModes << " NWaves: " << NWaves << std::endl;
     auto t1 = std::chrono::high_resolution_clock::now();
     tester_synth_turb<SynthTurb::SynthTurb3d_periodic_box, NModes, NWaves> periodic_box("pair_separation_new_periodic_box.dat");

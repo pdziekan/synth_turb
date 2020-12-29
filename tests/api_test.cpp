@@ -13,9 +13,9 @@
 template<template<class, int, int> class SynthTurb_t>
 void test()
 {
-  //SynthTurb_t<double, _NMODES, _NWAVES> rm_d(1e-4, (NX-1)*DX, 1e-3); // eps [m2/s3], Lmax [m], Lmin[m] (Lmin has no role in the periodic version)
-  SynthTurb_t<double, _NMODES, _NWAVES> rm_d(1e-4, 100, 1e-3); // eps [m2/s3], Lmax [m], Lmin[m] (Lmin has no role in the periodic version)
   // Lmax = (nx-1)*dx zeby sprawdzic warunek na periodycznosc
+  SynthTurb_t<double, _NMODES, _NWAVES> rm_d(1e-4, (NX-1)*DX, 1e-3); // eps [m2/s3], Lmax [m], Lmin[m] (Lmin has no role in the periodic version)
+//  SynthTurb_t<double, _NMODES, _NWAVES> rm_d(1e-4, 100, 1e-3); // eps [m2/s3], Lmax [m], Lmin[m] (Lmin has no role in the periodic version)
   rm_d.generate_random_modes();
 
   double u[NX][NX][NX],

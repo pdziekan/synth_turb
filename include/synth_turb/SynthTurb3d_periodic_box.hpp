@@ -67,12 +67,12 @@ namespace SynthTurb
           for(int i=0; i<3; ++i)
           {
             this->Anm[i][n][m] = relax * this->Anm[i][n][m] + this->std_dev[n] * sqrt(1. - relax * relax) * normal_d(local_rand_eng);
-        //    this->Anm[i][n][m+1] = -this->Anm[i][n][m];
-            this->Anm[i][n][m+1] = relax * this->Anm[i][n][m+1] + this->std_dev[n] * sqrt(1. - relax * relax) * normal_d(local_rand_eng);
+            this->Anm[i][n][m+1] = -this->Anm[i][n][m];
+        //    this->Anm[i][n][m+1] = relax * this->Anm[i][n][m+1] + this->std_dev[n] * sqrt(1. - relax * relax) * normal_d(local_rand_eng);
 
             this->Bnm[i][n][m] = relax * this->Bnm[i][n][m] + this->std_dev[n] * sqrt(1. - relax * relax) * normal_d(local_rand_eng);
-        //    this->Bnm[i][n][m+1] = this->Bnm[i][n][m];
-            this->Bnm[i][n][m+1] = relax * this->Bnm[i][n][m+1] + this->std_dev[n] * sqrt(1. - relax * relax) * normal_d(local_rand_eng);
+            this->Bnm[i][n][m+1] = this->Bnm[i][n][m];
+        //    this->Bnm[i][n][m+1] = relax * this->Bnm[i][n][m+1] + this->std_dev[n] * sqrt(1. - relax * relax) * normal_d(local_rand_eng);
           }
         }
       }
