@@ -13,8 +13,8 @@
 
 namespace SynthTurb
 {
-  // TODO: (don't) take into accont opposite vectors...
-  int degeneracy_generator(const int &n, std::vector<std::array<int,3>> &vectors)
+  // TODO: a co z vectors.size==0?
+  int degeneracy_generator(const int &n, std::vector<std::array<int,3>> &vectors) // returns degeneracy, fills vectors with half of the degeneracy (opposite vectors are not added)
   {
     int degeneracy = 0;
     vectors.clear();
@@ -27,7 +27,8 @@ namespace SynthTurb
           {
  //           std::cout << "(" << nx << "," << ny << "," << nz << ")" << std::endl;
             ++degeneracy;
-            vectors.push_back({nx,ny,nz});
+            if(std::find(vectors.begin(), vectors.end(), std::array<int,3>{-nx,-ny,-nz}) == vectors.end()) // add only if the opposite vector has not been added yet
+              vectors.push_back({nx,ny,nz});
           }
         }
  //   std::cout << "degeneracy: " << degeneracy << std::endl;
@@ -232,22 +233,25 @@ namespace SynthTurb
 
     void calculate_velocity(real_t &u, real_t &v, real_t &w, const real_t x[3])
     {
+      u = 0;
+      v = 0;
+      w = 0;
+
+      for(int n=0; n<Nmodes; ++n)
       {
-        u = 0;
-        v = 0;
-        w = 0;
-
-        for(int n=0; n<Nmodes; ++n)
+        //// std::cerr << i << " " << j << " " << k << " wnt: " << wnt << std::endl;
+        for(int m=0; m<Nwaves[n]; ++m)
         {
-          //// std::cerr << i << " " << j << " " << k << " wnt: " << wnt << std::endl;
-          for(int m=0; m<Nwaves[n]; ++m)
-          {
-            const real_t r = (knm[0][n][m] * x[0] + knm[1][n][m] * x[1] + knm[2][n][m] * x[2]);
+          this->generate_unit_wavevectors(n, m);
+//          std::cerr << "mode_idx: " << n << " wave_idx: " << m << " knm[0]: " << this->knm[0][n][m] << " knm[1]: " << this->knm[1][n][m] << " knm[2]: " << this->knm[2][n][m] << std::endl;
 
-            u += (Anm[1][n][m] * e[2] - Anm[2][n][m] * e[1])*cos(r) - (Bnm[1][n][m] * e[2] - Bnm[2][n][m] * e[1])*sin(r); 
-            v += (Anm[2][n][m] * e[0] - Anm[0][n][m] * e[2])*cos(r) - (Bnm[2][n][m] * e[0] - Bnm[0][n][m] * e[2])*sin(r); 
-            w += (Anm[0][n][m] * e[1] - Anm[1][n][m] * e[0])*cos(r) - (Bnm[0][n][m] * e[1] - Bnm[1][n][m] * e[0])*sin(r); 
-          }
+          const real_t r = (knm[0][n][m] * x[0] + knm[1][n][m] * x[1] + knm[2][n][m] * x[2]);
+
+  //        std::cerr << "mode_idx: " << n << " wave_idx: " << m << " cos coeff: " << (Anm[1][n][m] * e[2] - Anm[2][n][m] * e[1]) << " sin coeff: " << (Bnm[1][n][m] * e[2] - Bnm[2][n][m] * e[1]) << " Anm[1][n][m]: " << Anm[1][n][m] << " e[2]: std::endl; 
+
+          u += (Anm[1][n][m] * e[2] - Anm[2][n][m] * e[1])*cos(r) - (Bnm[1][n][m] * e[2] - Bnm[2][n][m] * e[1])*sin(r); 
+          v += (Anm[2][n][m] * e[0] - Anm[0][n][m] * e[2])*cos(r) - (Bnm[2][n][m] * e[0] - Bnm[0][n][m] * e[2])*sin(r); 
+          w += (Anm[0][n][m] * e[1] - Anm[1][n][m] * e[0])*cos(r) - (Bnm[0][n][m] * e[1] - Bnm[1][n][m] * e[0])*sin(r); 
         }
       }
     };

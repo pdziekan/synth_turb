@@ -2,18 +2,19 @@
 #include <synth_turb/SynthTurb3d_all_waves.hpp>
 #include <iostream>
 
-#define NX 4
+#define NX 3
 //#define NX 50
 #define DX 1
-#define _NMODES 200 //NX
+#define _NMODES 30 //NX
 //#define _NMODES 200
-#define _NWAVES 50//3
+#define _NWAVES 12//3
 //#define _NWAVES 50
 
 template<template<class, int, int> class SynthTurb_t>
 void test()
 {
-  SynthTurb_t<double, _NMODES, _NWAVES> rm_d(1e-4, (NX-1)*DX, 1e-3); // eps [m2/s3], Lmax [m], Lmin[m] (Lmin has no role in the periodic version)
+  //SynthTurb_t<double, _NMODES, _NWAVES> rm_d(1e-4, (NX-1)*DX, 1e-3); // eps [m2/s3], Lmax [m], Lmin[m] (Lmin has no role in the periodic version)
+  SynthTurb_t<double, _NMODES, _NWAVES> rm_d(1e-4, 100, 1e-3); // eps [m2/s3], Lmax [m], Lmin[m] (Lmin has no role in the periodic version)
   // Lmax = (nx-1)*dx zeby sprawdzic warunek na periodycznosc
   rm_d.generate_random_modes();
 
@@ -23,8 +24,8 @@ void test()
 
   double t=0;
 
-  rm_d.update_time(1);
-  rm_d.generate_velocity_field(u,v,w,DX,t);
+  rm_d.update_time(100);
+  rm_d.generate_velocity_field(u,v,w,DX);
 
   std::cout << "u:" << std::endl;
   for(int i=0; i<NX; ++i)

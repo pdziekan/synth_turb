@@ -25,11 +25,15 @@ namespace SynthTurb
           this->Nwaves[n] = Nwaves_max;
         }
 
-        for(int m=0; m<this->Nwaves[n]; ++m)
+        for(int m=0; m<this->Nwaves[n]; m+=2)
         {
-          enm[0][n][m] = vectors.at(m)[0];
-          enm[1][n][m] = vectors.at(m)[1];
-          enm[2][n][m] = vectors.at(m)[2];
+          enm[0][n][m] = vectors.at(m/2)[0];
+          enm[1][n][m] = vectors.at(m/2)[1];
+          enm[2][n][m] = vectors.at(m/2)[2];
+          // opposite vector
+          enm[0][n][m+1] = -vectors.at(m/2)[0];
+          enm[1][n][m+1] = -vectors.at(m/2)[1];
+          enm[2][n][m+1] = -vectors.at(m/2)[2];
         }
       }
 
@@ -49,7 +53,6 @@ namespace SynthTurb
 
     public:
 
-    // TODO: OpenMP it, what about normal dist thread safety?
     void update_time(const real_t &dt) override
     {
       #pragma omp parallel for
@@ -59,12 +62,17 @@ namespace SynthTurb
         std::default_random_engine local_rand_eng(std::random_device{}());
         real_t relax = exp(-this->wn[n] * dt);
 
-        for(int m=0; m<this->Nwaves[n]; ++m)
+        for(int m=0; m<this->Nwaves[n]; m+=2)
         {
           for(int i=0; i<3; ++i)
           {
             this->Anm[i][n][m] = relax * this->Anm[i][n][m] + this->std_dev[n] * sqrt(1. - relax * relax) * normal_d(local_rand_eng);
+        //    this->Anm[i][n][m+1] = -this->Anm[i][n][m];
+            this->Anm[i][n][m+1] = relax * this->Anm[i][n][m+1] + this->std_dev[n] * sqrt(1. - relax * relax) * normal_d(local_rand_eng);
+
             this->Bnm[i][n][m] = relax * this->Bnm[i][n][m] + this->std_dev[n] * sqrt(1. - relax * relax) * normal_d(local_rand_eng);
+        //    this->Bnm[i][n][m+1] = this->Bnm[i][n][m];
+            this->Bnm[i][n][m+1] = relax * this->Bnm[i][n][m+1] + this->std_dev[n] * sqrt(1. - relax * relax) * normal_d(local_rand_eng);
           }
         }
       }
@@ -79,6 +87,7 @@ namespace SynthTurb
       const real_t &Lmin = 1e-3 // Kolmogorov length scale [m]
     )
     {
+      if(Nwaves_max % 2 != 0) throw std::runtime_error("Nwaves_max needs to be even, because we need to include opposites of all wavevectors.");
       this->init(eps, Lmax, Lmin);
     }
   };
