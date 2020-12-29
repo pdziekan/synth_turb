@@ -16,7 +16,6 @@ namespace SynthTurb
       for(int n=0; n<Nmodes; ++n)
       {
         this->Nwaves[n] = degeneracy_generator(n+1, vectors);
-        std::cerr << "vectors size: " << vectors.size() << std::endl;
 
         if(this->Nwaves[n] > Nwaves_max) // random shuffle, because not all possible degeneracies will be used
         {
@@ -24,6 +23,8 @@ namespace SynthTurb
           std::shuffle(std::begin(vectors), std::end(vectors), local_rand_eng);
           this->Nwaves[n] = Nwaves_max;
         }
+      //  if(Nwaves_max != 6) throw std::runtime_error("nwaves max needs to be 6 for this test");
+      //  vectors = {{1,0,0},{0,1,0},{0,0,1}};
 
         for(int m=0; m<this->Nwaves[n]; m+=2)
         {
@@ -47,8 +48,6 @@ namespace SynthTurb
       this->e[0]=enm[0][mode_idx][wave_idx] / sqrt(mode_idx+1);
       this->e[1]=enm[1][mode_idx][wave_idx] / sqrt(mode_idx+1);
       this->e[2]=enm[2][mode_idx][wave_idx] / sqrt(mode_idx+1);
-
-      std::cerr << "mode_idx: " << mode_idx << " wave_idx: " << wave_idx << " e[0]: " << this->e[0] << " e[1]: " << this->e[1] << " e[2]: " << this->e[2] << std::endl;
     }
 
     public:

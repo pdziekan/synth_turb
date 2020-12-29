@@ -12,7 +12,7 @@
 //#define _NMODES 200
 //#define _NWAVES 5//50
 
-#define NPairs 1000 // number of test particle pairs
+#define NPairs 100 // 1000 // number of test particle pairs
 #define InitSep 1 // initial separation [in units of the Kolmogorov length]
 #define LKol 1e-3 // Kolmogorov length [m]
 #define Lmax 1 // integral length [m]
@@ -40,7 +40,9 @@ class tester_common
 
   double mean_r, sig_r;
 
-  virtual void update_positions(const int&, const double&)=0;
+  virtual void predictor(const int&, const double&)=0;
+  virtual void corrector(const int&, const double&)=0;
+  virtual void update_time(const double&)=0;
 
   public:
   //ctor
@@ -80,11 +82,18 @@ class tester_common
     //  const int n_step = T / DT;
     for(double t=0; t<=T; t+=DT)
     {
-      // update positions
       #pragma omp parallel for
       for(int p=0; p<NPairs; ++p)
       {
-        this->update_positions(p, t);
+        this->predictor(p, t);
+      }
+
+      this->update_time(DT);
+
+      #pragma omp parallel for
+      for(int p=0; p<NPairs; ++p)
+      {
+        this->corrector(p, t);
         // calculate separation
         r[p] = sqrt(
           (x[p][1][0][0] - x[p][0][0][0]) * (x[p][1][0][0] - x[p][0][0][0]) + 
@@ -122,27 +131,36 @@ class tester_synth_turb : public tester_common
 {
   using parent_t = tester_common;
 
-  void update_positions(const int &p, const double &t) override
+  void predictor(const int &p, const double &t) override
   {
-   for(int d=0; d<2; ++d)
-   {
-     // predictor
-     if(t==0) rm_d.calculate_velocity(v[p][d][0][0], v[p][d][0][1], v[p][d][0][2], x[p][d][0]);
-     for(int i=0; i<3; ++i)
-     {
-       x[p][d][1][i] = x[p][d][0][i] + v[p][d][0][i] * DT; 
-     }
-   }
-   rm_d.update_time(DT);
-   for(int d=0; d<2; ++d)
-   {
-     // corrector
-     rm_d.calculate_velocity(v[p][d][1][0], v[p][d][1][1], v[p][d][1][2], x[p][d][1]);
-     for(int i=0; i<3; ++i)
-     {
-       x[p][d][0][i] += 0.5 * (v[p][d][0][i] + v[p][d][1][i]) * DT; 
-     }
-   }
+    for(int d=0; d<2; ++d)
+    {
+      // predictor
+      rm_d.calculate_velocity(v[p][d][0][0], v[p][d][0][1], v[p][d][0][2], x[p][d][0]);
+      //rm_d.calculate_velocity(v[p][d][0][0], v[p][d][0][1], v[p][d][0][2], x[p][d][0]);
+      for(int i=0; i<3; ++i)
+      {
+        x[p][d][1][i] = x[p][d][0][i] + v[p][d][0][i] * DT; 
+      }
+    }
+  }
+
+  void corrector(const int &p, const double &t) override
+  {
+    for(int d=0; d<2; ++d)
+    {
+      // corrector
+      rm_d.calculate_velocity(v[p][d][1][0], v[p][d][1][1], v[p][d][1][2], x[p][d][1]);
+      for(int i=0; i<3; ++i)
+      {
+        x[p][d][0][i] += 0.5 * (v[p][d][0][i] + v[p][d][1][i]) * DT; 
+      }
+    }
+  }
+
+  void update_time(const double &dt) override
+  {
+    rm_d.update_time(dt);
   }
 
   private:
@@ -164,22 +182,30 @@ class tester_rand_turb : public tester_common
 {
   using parent_t = tester_common;
 
-  void update_positions(const int &p, const double &t) override
+  void predictor(const int &p, const double &t) override
   {
-   for(int d=0; d<2; ++d)
-   {
-     // predictor
-     for(int i=0; i<3; ++i)
-       rm_d.update_sgs_velocity(v[p][d][0][i], DT);
-     // corrector
-     for(int i=0; i<3; ++i)
-     {
-       v[p][d][1][i] = v[p][d][0][i];
-       rm_d.update_sgs_velocity(v[p][d][1][i], DT);
-       x[p][d][0][i] += 0.5 * (v[p][d][0][i] + v[p][d][1][i]) * DT; 
-     }
-   }
+    for(int d=0; d<2; ++d)
+    {
+      for(int i=0; i<3; ++i)
+        rm_d.update_sgs_velocity(v[p][d][0][i], DT);
+    }
   }
+
+  void corrector(const int &p, const double &t) override
+  {
+    for(int d=0; d<2; ++d)
+    {
+      for(int i=0; i<3; ++i)
+      {
+        v[p][d][1][i] = v[p][d][0][i];
+        rm_d.update_sgs_velocity(v[p][d][1][i], DT);
+        x[p][d][0][i] += 0.5 * (v[p][d][0][i] + v[p][d][1][i]) * DT; 
+      }
+    }
+  }
+
+  void update_time(const double &dt) override
+  {}
 
   private:
   RandTurb_t<double> rm_d;
@@ -207,7 +233,7 @@ int main()
   // synth turb with periodic box flow
   {
     constexpr int NModes=1000,
-                  NWaves=6;
+                  NWaves=50;
     std::cout << "Starting periodic_box separation test, NModes: " << NModes << " NWaves: " << NWaves << std::endl;
     auto t1 = std::chrono::high_resolution_clock::now();
     tester_synth_turb<SynthTurb::SynthTurb3d_periodic_box, NModes, NWaves> periodic_box("pair_separation_new_periodic_box.dat");
