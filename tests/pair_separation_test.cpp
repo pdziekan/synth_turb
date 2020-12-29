@@ -18,7 +18,7 @@
 #define Lmax 1 // integral length [m]
 #define DT 0.1 // [s]
 #define T 100 // [s]
-#define EPS 1e-2 // TKE diss rate [m2/s3]
+#define EPS 1e-3 // TKE diss rate [m2/s3]
 
 
 class tester_common
@@ -232,8 +232,8 @@ int main()
 
   // synth turb with periodic box flow
   {
-    constexpr int NModes=1000,
-                  NWaves=50;
+    constexpr int NModes=200,
+                  NWaves=200;
     std::cout << "Starting periodic_box separation test, NModes: " << NModes << " NWaves: " << NWaves << std::endl;
     auto t1 = std::chrono::high_resolution_clock::now();
     tester_synth_turb<SynthTurb::SynthTurb3d_periodic_box, NModes, NWaves> periodic_box("pair_separation_new_periodic_box.dat");

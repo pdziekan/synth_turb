@@ -9,13 +9,54 @@ namespace SynthTurb
     using parent_t = SynthTurb3d_common<real_t, Nmodes, Nwaves_max>;
 
     int enm[3][Nmodes][Nwaves_max];
+    int nn[Nmodes];
 
     void generate_wavenumbers(const real_t &Lmax, const real_t &Lmin) override
     {
+      // wavevectors in the form k = (nx,ny,nz) * 2 PI / L, where n is integer to get periodic flow 
+
+      // nn = nx^2 + ny^2 + nz^2 
+
+      // linear distribution of nn (nn = 1, 2, 3, 4, ..., Nmodes)
+   //   for(int n=0; n<Nmodes; ++n)
+     //   this->k[n] = sqrt(n+1) * (2. * M_PI / Lmax);
+
+      // geometric distribution of nn
+      this->k[0] = 2. * M_PI / Lmax;
+      nn[0]=1;
+
+      real_t alpha = pow(Lmax / Lmin, 1. / (Nmodes - 1));
+      while(1)
+      {
+//        std::cerr << "alpha: " << alpha << std::endl;
+
+        for(int n=1; n<Nmodes; ++n)
+        {
+          nn[n] = -1;
+          int exponent = n;
+          while(nn[n] <= nn[n-1])
+          {
+            nn[n] = std::round(std::pow(alpha, exponent++));
+          }
+          if(nn[n] > Lmax / Lmin) break;
+        }
+        if(nn[Nmodes-1] <= Lmax / Lmin)
+          break;
+        else
+          alpha /= 1.001;
+      }
+
+      for(int n=1; n<Nmodes; ++n)
+      {
+        std::cerr << "nn[" << n << "]: " << nn[n] << std::endl;
+        this->k[n] = this->k[0] * sqrt(nn[n]);
+      }
+
+
       std::vector<std::array<int,3>> vectors;
       for(int n=0; n<Nmodes; ++n)
       {
-        this->Nwaves[n] = degeneracy_generator(n+1, vectors);
+        this->Nwaves[n] = degeneracy_generator(nn[n], vectors);
 
         if(this->Nwaves[n] > Nwaves_max) // random shuffle, because not all possible degeneracies will be used
         {
@@ -37,10 +78,6 @@ namespace SynthTurb
           enm[2][n][m+1] = -vectors.at(m/2)[2];
         }
       }
-
-      // wavevectors in the form k = (nx,ny,nz) * 2 PI / L, where n is integer to get periodic flow 
-      for(int n=0; n<Nmodes; ++n)
-        this->k[n] = sqrt(n+1) * (2. * M_PI / Lmax);
     }
 
     void generate_unit_wavevectors(const int &mode_idx, const int &wave_idx) override
